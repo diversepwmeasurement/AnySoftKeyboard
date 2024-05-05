@@ -1,66 +1,58 @@
----
-name: localization
-
-# always run on the default branch: main
-on:
-  # schedule is used to fetch new, async, translations
-  schedule:
-    - cron: '24 02 * * *'
-  # push is used to upload new system strings
-  push:
-    branches:
-      - main
-    paths:
-      - '**/res/values/strings.xml'
-      - '.github/workflows/localization_update.yml'
-      - 'crowdin.yml'
-
 env:
-  TERM: dumb
-  TMPDIR: "/tmp"
   CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_API_PERSONAL_TOKEN }}
-
+  TERM: dumb
+  TMPDIR: /tmp
 jobs:
   localization-update:
-    runs-on: ubuntu-22.04
     container: ghcr.io/menny/android_ndk:1.20.0
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
-      - name: Crowdin push
-        uses: crowdin/github-action@v1.20.2
-        with:
-          upload_sources: true
-          upload_translations: false
-          download_translations: false
-          config: crowdin.yml
-      - name: Crowdin pull
-        uses: crowdin/github-action@v1.20.2
-        with:
-          upload_sources: false
-          upload_translations: false
-          download_translations: true
-          create_pull_request: false
-          push_translations: false
-          config: crowdin.yml
-      - name: Update force-locale list
-        run: ./gradlew :ime:app:generateForceLocaleArrayResourceFile
-      - name: Fix resource files special characters
-        run: |
-          echo "fixing ellipsis character..."
-          find . -type f -name "strings.xml" -exec sed -i 's/\.\.\./…/g' {} \;
-      - name: fix git safe dir
-        run: git config --global --add safe.directory "${PWD}"
-      - name: Create pull request
-        uses: peter-evans/create-pull-request@v6.0.4
-        with:
-          token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
-          commit-message: 'Automated Localization Update from crowdin'
-          title: 'Automated Localization Update from crowdin'
-          committer: 'Polyglot <ask@evendanan.net>'
-          author: 'Polyglot <ask@evendanan.net>'
-          body: 'Generated from latest _main_ strings and crowdin data.'
-          team-reviewers: add-on-maintainers
-          branch: 'bot-pr/localization-update'
-          delete-branch: true
+    - continue-on-error: true
+      uses: actions/checkout@v4.1.1
+      with:
+        token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
+    - continue-on-error: true
+      name: Crowdin push
+      uses: crowdin/github-action@v1.20.2
+      with:
+        config: crowdin.yml
+        download_translations: false
+        upload_sources: true
+        upload_translations: false
+    - continue-on-error: true
+      name: Crowdin pull
+      uses: crowdin/github-action@v1.20.2
+      with:
+        config: crowdin.yml
+        create_pull_request: false
+        download_translations: true
+        push_translations: false
+        upload_sources: false
+        upload_translations: false
+    - continue-on-error: true
+      name: Update force-locale list
+      run: ./gradlew :ime:app:generateForceLocaleArrayResourceFile
+    - continue-on-error: true
+      name: Fix resource files special characters
+      run: "echo \"fixing ellipsis character...\"\nfind . -type f -name \"strings.xml\"\
+        \ -exec sed -i 's/\\.\\.\\./\u2026/g' {} \\;\n"
+    - continue-on-error: true
+      name: fix git safe dir
+      run: git config --global --add safe.directory "${PWD}"
+    - continue-on-error: true
+      name: Create pull request
+      uses: peter-evans/create-pull-request@v6.0.4
+      with:
+        author: Polyglot <ask@evendanan.net>
+        body: Generated from latest _main_ strings and crowdin data.
+        branch: bot-pr/localization-update
+        commit-message: Automated Localization Update from crowdin
+        committer: Polyglot <ask@evendanan.net>
+        delete-branch: true
+        team-reviewers: add-on-maintainers
+        title: Automated Localization Update from crowdin
+        token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
+name: localization
+on:
+  repository_dispatch:
+    types: trigger-ga___localization_update.yml

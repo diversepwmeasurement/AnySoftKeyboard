@@ -1,31 +1,31 @@
----
-name: deployment-promote
-
-on:
-  schedule:
-    - cron: '04 04 * * *'
-
 env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
   TERM: dumb
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-
 jobs:
   promote:
-    runs-on: ubuntu-22.04
     container: ghcr.io/menny/android_base:1.20.0
-    strategy:
-      matrix:
-        refname: [main, release-branch-addons-v5.0-r1]
-      fail-fast: false
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          ref: ${{ matrix.refname }}
-      - name: request-scheduled-promote
-        uses: ./.github/actions/deploy-request
-        with:
-          sha: HEAD
-          ref: ${{ matrix.refname }}
-          new_deploy: false
-          api_username: ${{ secrets.BOT_MASTER_RW_GITHUB_USERNAME }}
-          api_token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
+    - continue-on-error: true
+      uses: actions/checkout@v4.1.1
+      with:
+        ref: ${{ matrix.refname }}
+    - continue-on-error: true
+      name: request-scheduled-promote
+      uses: ./.github/actions/deploy-request
+      with:
+        api_token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
+        api_username: ${{ secrets.BOT_MASTER_RW_GITHUB_USERNAME }}
+        new_deploy: false
+        ref: ${{ matrix.refname }}
+        sha: HEAD
+    strategy:
+      fail-fast: false
+      matrix:
+        refname:
+        - main
+        - release-branch-addons-v5.0-r1
+name: deployment-promote
+on:
+  repository_dispatch:
+    types: trigger-ga___deployment_promote.yml

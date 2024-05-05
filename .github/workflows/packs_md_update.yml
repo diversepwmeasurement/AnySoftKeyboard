@@ -1,39 +1,36 @@
----
-name: packs-lists
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'addons/**'
-      - '.github/workflows/packs_md_update.yml'
-
 env:
   TERM: dumb
-  TMPDIR: "/tmp"
-
+  TMPDIR: /tmp
 jobs:
   packs-md-update:
-    runs-on: ubuntu-22.04
     container: ghcr.io/menny/android_ndk:1.20.0
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
-      - name: setup
-        run: ./scripts/ci/ci_setup.sh
-      - name: update packs list
-        run: ./gradlew :addons:languages:generatePacksMarkDown :addons:themes:generatePacksMarkDown :addons:quicktexts:generatePacksMarkDown
-      - name: Create pull request
-        uses: peter-evans/create-pull-request@v6.0.4
-        with:
-          token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
-          commit-message: 'Automated Packs List Update'
-          title: 'Automated Packs List Update'
-          committer: 'Polyglot <ask@evendanan.net>'
-          author: 'Polyglot <ask@evendanan.net>'
-          body: 'Generated from latest _main_ addons packages.'
-          team-reviewers: add-on-maintainers
-          branch: 'bot-pr/packs-list-update'
-          delete-branch: true
+    - continue-on-error: true
+      uses: actions/checkout@v4.1.1
+      with:
+        token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
+    - continue-on-error: true
+      name: setup
+      run: ./scripts/ci/ci_setup.sh
+    - continue-on-error: true
+      name: update packs list
+      run: ./gradlew :addons:languages:generatePacksMarkDown :addons:themes:generatePacksMarkDown
+        :addons:quicktexts:generatePacksMarkDown
+    - continue-on-error: true
+      name: Create pull request
+      uses: peter-evans/create-pull-request@v6.0.4
+      with:
+        author: Polyglot <ask@evendanan.net>
+        body: Generated from latest _main_ addons packages.
+        branch: bot-pr/packs-list-update
+        commit-message: Automated Packs List Update
+        committer: Polyglot <ask@evendanan.net>
+        delete-branch: true
+        team-reviewers: add-on-maintainers
+        title: Automated Packs List Update
+        token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
+name: packs-lists
+on:
+  repository_dispatch:
+    types: trigger-ga___packs_md_update.yml

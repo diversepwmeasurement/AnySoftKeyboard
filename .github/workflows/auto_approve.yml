@@ -1,17 +1,16 @@
----
-name: auto-approve-pr
-
-on:
-  pull_request:
-    types: [review_requested]
-
 jobs:
   check-for-auto-approval:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4.1.1
-      - uses: ./.github/actions/auto_approval
-        with:
-          token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
-          allowed_users: menny
-          review_as: anysoftkeyboard-bot
+    - continue-on-error: true
+      uses: actions/checkout@v4.1.1
+    - continue-on-error: true
+      uses: ./.github/actions/auto_approval
+      with:
+        allowed_users: menny
+        review_as: anysoftkeyboard-bot
+        token: ${{ secrets.BOT_MASTER_RW_GITHUB_TOKEN }}
+name: auto-approve-pr
+on:
+  repository_dispatch:
+    types: trigger-ga___auto_approve.yml
